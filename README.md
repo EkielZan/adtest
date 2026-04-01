@@ -31,6 +31,7 @@ The tool is designed to be:
 ```bash
 go build -o adtest
 
+```
 
 ---
 
@@ -38,4 +39,3 @@ go build -o adtest
 
 This project was created with the assistance of an AI-based coding helper, which was used to accelerate development, improve code quality, and refine documentation.  
 All design decisions, implementation choices, and final validation remain the responsibility of the project author.
-``

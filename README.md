@@ -166,5 +166,3 @@ This project was created with the assistance of an AI-based coding helper, which
 to accelerate development, improve code quality, and refine documentation.  
 All design decisions, implementation choices, and final validation remain the
 responsibility of the project author.
-
-```

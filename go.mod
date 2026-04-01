@@ -1,4 +1,4 @@
-module github.com/ekeilzan/adtest
+module github.com/ekielzan/adtest
 
 go 1.13
 

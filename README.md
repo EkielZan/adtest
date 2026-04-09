@@ -44,9 +44,9 @@ when necessary using CLI flags.
 
 ```json
 {
-  "hostname": "SA1000000047.ad.ing.net",
+  "hostname": "hostname.company.com",
   "port": 636,
-  "baseDN": "DC=ad,DC=ing,DC=net",
+  "baseDN": "DC=,dDC=company,DC=com",
   "bindUser": "AD\\service_account"
 }
 ````

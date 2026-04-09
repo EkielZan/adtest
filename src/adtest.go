@@ -111,8 +111,9 @@ func main() {
 
 	// Defaults
 	cfg := Config{
-		Hostname: "localhost",
+		Hostname: "SA1000000047.ad.ing.net",
 		Port:     636,
+		BaseDN:   "DC=ad,DC=ing,DC=net",
 	}
 
 	// Load config file if provided

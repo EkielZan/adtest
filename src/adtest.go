@@ -46,8 +46,8 @@ func connectToAD(hostname string, port int, username string, password string) (*
 	return conn, nil
 }
 
-func readPassword() (string, error) {
-	fmt.Print("LDAP Password: ")
+func readPassword(bindUser string) (string, error) {
+	fmt.Printf("LDAP Password for %s: ", bindUser)
 	bytes, err := term.ReadPassword(int(syscall.Stdin))
 	fmt.Println()
 	if err != nil {
@@ -97,23 +97,53 @@ func searchUserBySAMAccountName(conn *ldap.Conn, baseDN string, samAccountName s
 	}, nil
 }
 
+func generateConfigFile(path string, cfg Config) error {
+
+	file, err := os.Create(path)
+	if err != nil {
+		return fmt.Errorf("failed to create config file: %w", err)
+	}
+	defer file.Close()
+
+	encoder := json.NewEncoder(file)
+	encoder.SetIndent("", "  ")
+
+	if err := encoder.Encode(cfg); err != nil {
+		return fmt.Errorf("failed to write config file: %w", err)
+	}
+
+	return nil
+}
+
 func main() {
 	// CLI flags
 	configPath := flag.String("config", "", "Path to JSON config file")
 	bindUserFlag := flag.String("b", "", "AD bind user (DOMAIN\\\\user)")
 	sam := flag.String("sam", "", "sAMAccountName to search for")
 	jsonOut := flag.Bool("json", false, "Output result as JSON")
+	jsonGen := flag.Bool("json-gen", false, "Generate example JSON config file")
 	flag.Parse()
-
-	if *sam == "" {
-		log.Fatal("Missing required flag: -sam")
-	}
 
 	// Defaults
 	cfg := Config{
-		Hostname: "SA1000000047.ad.ing.net",
+		Hostname: "hostname",
 		Port:     636,
-		BaseDN:   "DC=ad,DC=ing,DC=net",
+		BaseDN:   "DC=ad,DC=company,DC=com",
+	}
+
+	if *jsonGen {
+		err := generateConfigFile("example.json", cfg)
+		if err != nil {
+			fmt.Println("Error:", err)
+			return
+		}
+
+		fmt.Println("✅ example.json generated successfully")
+		os.Exit(0)
+	}
+
+	if *sam == "" {
+		log.Fatal("Missing required flag: -sam")
 	}
 
 	// Load config file if provided
@@ -138,7 +168,7 @@ func main() {
 	password := os.Getenv("LDAP_PASSWORD")
 	if password == "" {
 		var err error
-		password, err = readPassword()
+		password, err = readPassword(cfg.BindUser)
 		if err != nil {
 			log.Fatal("Failed to read password:", err)
 		}
@@ -172,8 +202,14 @@ func main() {
 		fmt.Println("✅ User found")
 		fmt.Printf("DN: %s\n", user.DN)
 		fmt.Printf("CN: %s\n", user.CN)
-		fmt.Printf("sAMAccountName: %s\n", user.SAMAccountName)
-		fmt.Printf("Display Name: %s\n", user.DisplayName)
-		fmt.Printf("Email: %s\n", user.Mail)
+		if user.SAMAccountName != "" {
+			fmt.Printf("sAMAccountName: %s\n", user.SAMAccountName)
+		}
+		if user.DisplayName != "" {
+			fmt.Printf("DisplayName: %s\n", user.DisplayName)
+		}
+		if user.Mail != "" {
+			fmt.Printf("Email: %s\n", user.Mail)
+		}
 	}
 }

@@ -1,6 +1,0 @@
-{
-  "hostname": "hostname.company.com",
-  "port": 636,
-  "baseDN": "DC=,dDC=company,DC=com",
-  "bindUser": "AD\\service_account"
-}

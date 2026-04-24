@@ -22,7 +22,9 @@ The tool is designed to be:
 - Secure password handling (no hardcoded secrets, no echo)
 - Optional JSON output for automation
 - Clear handling of “user not found” cases
-- Script-friendly exit codes- Optional insecure mode for self-signed/untrusted certificates
+- Script-friendly exit codes
+- Optional insecure mode for self-signed/untrusted certificates
+
 ---
 
 ## 📦 Build

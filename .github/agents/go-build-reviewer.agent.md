@@ -58,6 +58,7 @@ You are an experienced Go developer with deep expertise in compilation, build pi
 ### 2.1 CI/CD Integration (GitHub Actions)
 
 - **Separate lint job** — run golangci-lint-action separately for clear failure reporting
+- **Use golangci-lint-action v7** — required for golangci-lint v2.x (v6 only supports v1.x)
 - **Pin golangci-lint version** — use specific version (e.g., `v2.11.4`) not `latest` for reproducibility
 - **Config path for working-directory** — use `args: --config=../.golangci.yml` when running from subdirectory
 - **Skip redundant linting** — set `SKIP_LINT=1` in build job when lint job runs separately

@@ -10,10 +10,12 @@ if [[ "${1:-}" == "1" ]]; then
     FORCE="-a"
 fi
 
-# Run linting (if available)
+# Run linting (if available and not skipped)
 cd src
-echo "Running linter..."
-if command -v golangci-lint &> /dev/null; then
+if [[ "${SKIP_LINT:-}" == "1" ]]; then
+    echo "⚠️  Skipping linting (SKIP_LINT=1)"
+elif command -v golangci-lint &> /dev/null; then
+    echo "Running linter..."
     if ! golangci-lint run ./...; then
         echo "❌ Linting failed"
         exit 1

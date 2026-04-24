@@ -53,6 +53,15 @@ You are an experienced Go developer with deep expertise in compilation, build pi
 - **Ensure tests run with `-race` flag** — requires `CGO_ENABLED=1` before testing
 - **Set CGO_ENABLED=0 for static builds** — after tests, disable CGO for portable binaries
 - **Ensure tests run before compilation** — prevent broken binaries from being produced
+- **Support SKIP_LINT flag** — allow CI to skip linting in build script when done separately
+
+### 2.1 CI/CD Integration (GitHub Actions)
+
+- **Separate lint job** — run golangci-lint-action separately for clear failure reporting
+- **Pin golangci-lint version** — use specific version (e.g., `v2.11.4`) not `latest` for reproducibility
+- **Config path for working-directory** — use `args: --config=../.golangci.yml` when running from subdirectory
+- **Skip redundant linting** — set `SKIP_LINT=1` in build job when lint job runs separately
+- **Race detection in CI** — CGO is enabled by default in GitHub Actions runners
 
 ### 3. Compilation Problem Diagnosis
 

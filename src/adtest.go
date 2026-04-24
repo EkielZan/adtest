@@ -28,13 +28,14 @@ func loadConfig(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-func connectToAD(hostname string, port int, username string, password string) (*ldap.Conn, error) {
+func connectToAD(hostname string, port int, username string, password string, skipVerify bool) (*ldap.Conn, error) {
 	addr := fmt.Sprintf("%s:%d", hostname, port)
 
-	// Secure TLS configuration with proper certificate validation
+	// TLS configuration
 	tlsConfig := &tls.Config{
-		ServerName: hostname,
-		MinVersion: tls.VersionTLS12,
+		ServerName:         hostname,
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: skipVerify,
 	}
 
 	conn, err := ldap.DialTLS("tcp", addr, tlsConfig)
@@ -63,7 +64,7 @@ func readPassword(bindUser string) (string, error) {
 func searchUserBySAMAccountName(conn *ldap.Conn, baseDN string, samAccountName string) (*UserResult, error) {
 	// Escape user input to prevent LDAP injection
 	escapedSAM := ldap.EscapeFilter(samAccountName)
-	
+
 	req := ldap.NewSearchRequest(
 		baseDN,
 		ldap.ScopeWholeSubtree,
@@ -129,6 +130,7 @@ func main() {
 	sam := flag.String("sam", "", "sAMAccountName to search for")
 	jsonOut := flag.Bool("json", false, "Output result as JSON")
 	jsonGen := flag.Bool("json-gen", false, "Generate example JSON config file")
+	insecure := flag.Bool("insecure", false, "Skip TLS certificate verification (use with caution)")
 	flag.Parse()
 
 	// Defaults
@@ -167,8 +169,8 @@ func main() {
 		cfg.BindUser = *bindUserFlag
 	}
 
-	if cfg.Hostname == "" || cfg.Port == 0 || cfg.BaseDN == "" || cfg.BindUser == "" {
-		log.Fatal("Incomplete configuration (hostname, port, baseDN, bindUser required)")
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
 	}
 
 	// Password handling
@@ -181,7 +183,11 @@ func main() {
 		}
 	}
 
-	conn, err := connectToAD(cfg.Hostname, cfg.Port, cfg.BindUser, password)
+	if *insecure {
+		log.Println("⚠️  WARNING: TLS certificate verification is disabled")
+	}
+
+	conn, err := connectToAD(cfg.Hostname, cfg.Port, cfg.BindUser, password, *insecure)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -204,7 +210,9 @@ func main() {
 	if *jsonOut {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		enc.Encode(user)
+		if err := enc.Encode(user); err != nil {
+			log.Fatalf("Failed to encode JSON output: %v", err)
+		}
 	} else {
 		fmt.Println("✅ User found")
 		fmt.Printf("DN: %s\n", user.DN)

@@ -22,8 +22,7 @@ The tool is designed to be:
 - Secure password handling (no hardcoded secrets, no echo)
 - Optional JSON output for automation
 - Clear handling of “user not found” cases
-- Script-friendly exit codes
-
+- Script-friendly exit codes- Optional insecure mode for self-signed/untrusted certificates
 ---
 
 ## 📦 Build
@@ -46,10 +45,10 @@ when necessary using CLI flags.
 {
   "hostname": "hostname.company.com",
   "port": 636,
-  "baseDN": "DC=,dDC=company,DC=com",
+  "baseDN": "DC=ad,DC=company,DC=com",
   "bindUser": "AD\\service_account"
 }
-````
+```
 
 ### Configuration fields explained
 
@@ -116,11 +115,13 @@ Below is the list of all supported command-line flags.
 
 ### Optional flags
 
-| Flag      | Description                                                         |
-| --------- | ------------------------------------------------------------------- |
-| `-config` | Path to a JSON configuration file                                   |
-| `-b`      | Bind user used to authenticate to Active Directory (`DOMAIN\\user`) |
-| `-json`   | Output the result in JSON format instead of human-readable text     |
+| Flag        | Description                                                         |
+| ----------- | ------------------------------------------------------------------- |
+| `-config`   | Path to a JSON configuration file                                   |
+| `-b`        | Bind user used to authenticate to Active Directory (`DOMAIN\\user`) |
+| `-json`     | Output the result in JSON format instead of human-readable text     |
+| `-json-gen` | Generate an example JSON configuration file (`example.json`)        |
+| `-insecure` | Skip TLS certificate verification (use with caution)                |
 
 ***
 
@@ -144,6 +145,43 @@ Below is the list of all supported command-line flags.
 ./adtest -config config.json -sam testuser -json
 ```
 
+#### Generate example configuration file
+
+```bash
+./adtest -json-gen
+```
+
+This creates an `example.json` file with default configuration values.
+
+#### Connect with insecure mode (self-signed certificates)
+
+```bash
+./adtest -config config.json -sam testuser -insecure
+```
+
+***
+
+## 🔓 TLS Certificate Verification
+
+By default, `adtest` enforces strict TLS certificate verification with a minimum of TLS 1.2.
+This ensures secure communication with your Active Directory server.
+
+However, in development or test environments where self-signed or untrusted certificates
+are used, you can disable certificate verification using the `-insecure` flag:
+
+```bash
+./adtest -config config.json -sam testuser -insecure
+```
+
+⚠️ **Security Warning**: Using `-insecure` disables certificate validation, making
+the connection vulnerable to man-in-the-middle attacks. **Never use this flag in
+production environments.**
+
+When `-insecure` is used, a warning message is displayed:
+```
+⚠️  WARNING: TLS certificate verification is disabled
+```
+
 ***
 
 ## 🔐 Password handling
@@ -160,9 +198,45 @@ This design prevents accidental disclosure via logs, shell history, or process l
 
 ***
 
+## 🧪 Testing
+
+The project includes a comprehensive test suite. Tests are integrated into the build
+pipeline and run automatically before compilation.
+
+**Quick start:**
+
+```bash
+cd src
+go test -v ./...
+```
+
+Or use the build script:
+
+```bash
+./build.sh
+```
+
+📖 **For detailed testing documentation**, including test coverage, design principles,
+and guidelines for adding new tests, see **[TESTING.md](TESTING.md)**.
+
+***
+
 ## 🤖 Project origin
 
 This project was created with the assistance of an AI-based coding helper, which was used
 to accelerate development, improve code quality, and refine documentation.  
 All design decisions, implementation choices, and final validation remain the
 responsibility of the project author.
+
+---
+
+## 📝 AI Contribution Notes
+
+The following components were generated or enhanced with AI assistance:
+
+- **Documentation**: This README and inline code comments
+- **Test cases**: Unit tests in `adtest_test.go`
+- **Build pipeline**: `build.sh` with test integration and workflow improvements
+- **Agent configuration**: `.github/agents/go-build-reviewer.agent.md`
+
+**AI Version**: Claude Opus 4.5 (GitHub Copilot)

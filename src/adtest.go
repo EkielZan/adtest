@@ -18,7 +18,7 @@ func loadConfig(path string) (*Config, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	var cfg Config
 	if err := json.NewDecoder(f).Decode(&cfg); err != nil {
@@ -28,18 +28,24 @@ func loadConfig(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-func connectToAD(hostname string, port int, username string, password string) (*ldap.Conn, error) {
-	addr := fmt.Sprintf("%s:%d", hostname, port)
+func connectToAD(hostname string, port int, username string, password string, skipVerify bool) (*ldap.Conn, error) {
+	// TLS configuration
+	tlsConfig := &tls.Config{
+		ServerName:         hostname,
+		MinVersion:         tls.VersionTLS12,
+		InsecureSkipVerify: skipVerify,
+	}
 
-	conn, err := ldap.DialTLS("tcp", addr, &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	conn, err := ldap.DialURL(
+		fmt.Sprintf("ldaps://%s:%d", hostname, port),
+		ldap.DialWithTLSConfig(tlsConfig),
+	)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial AD server: %w", err)
 	}
 
 	if err := conn.Bind(username, password); err != nil {
-		conn.Close()
+		_ = conn.Close()
 		return nil, fmt.Errorf("bind failed: %w", err)
 	}
 
@@ -57,6 +63,9 @@ func readPassword(bindUser string) (string, error) {
 }
 
 func searchUserBySAMAccountName(conn *ldap.Conn, baseDN string, samAccountName string) (*UserResult, error) {
+	// Escape user input to prevent LDAP injection
+	escapedSAM := ldap.EscapeFilter(samAccountName)
+
 	req := ldap.NewSearchRequest(
 		baseDN,
 		ldap.ScopeWholeSubtree,
@@ -64,7 +73,7 @@ func searchUserBySAMAccountName(conn *ldap.Conn, baseDN string, samAccountName s
 		0,
 		0,
 		false,
-		fmt.Sprintf("(sAMAccountName=%s)", samAccountName),
+		fmt.Sprintf("(sAMAccountName=%s)", escapedSAM),
 		[]string{
 			"dn",
 			"cn",
@@ -103,7 +112,7 @@ func generateConfigFile(path string, cfg Config) error {
 	if err != nil {
 		return fmt.Errorf("failed to create config file: %w", err)
 	}
-	defer file.Close()
+	defer func() { _ = file.Close() }()
 
 	encoder := json.NewEncoder(file)
 	encoder.SetIndent("", "  ")
@@ -122,6 +131,7 @@ func main() {
 	sam := flag.String("sam", "", "sAMAccountName to search for")
 	jsonOut := flag.Bool("json", false, "Output result as JSON")
 	jsonGen := flag.Bool("json-gen", false, "Generate example JSON config file")
+	insecure := flag.Bool("insecure", false, "Skip TLS certificate verification (use with caution)")
 	flag.Parse()
 
 	// Defaults
@@ -160,8 +170,8 @@ func main() {
 		cfg.BindUser = *bindUserFlag
 	}
 
-	if cfg.Hostname == "" || cfg.Port == 0 || cfg.BaseDN == "" || cfg.BindUser == "" {
-		log.Fatal("Incomplete configuration (hostname, port, baseDN, bindUser required)")
+	if err := cfg.Validate(); err != nil {
+		log.Fatalf("Invalid configuration: %v", err)
 	}
 
 	// Password handling
@@ -174,11 +184,15 @@ func main() {
 		}
 	}
 
-	conn, err := connectToAD(cfg.Hostname, cfg.Port, cfg.BindUser, password)
+	if *insecure {
+		log.Println("⚠️  WARNING: TLS certificate verification is disabled")
+	}
+
+	conn, err := connectToAD(cfg.Hostname, cfg.Port, cfg.BindUser, password, *insecure)
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer conn.Close()
+	defer func() { _ = conn.Close() }()
 
 	user, err := searchUserBySAMAccountName(conn, cfg.BaseDN, *sam)
 	if err != nil {
@@ -189,15 +203,20 @@ func main() {
 			} else {
 				fmt.Println("❌ No user found")
 			}
-			os.Exit(1)
+			return // Exit without os.Exit to allow defer to run
 		}
-		log.Fatal(err)
+		// Print error and return to allow defer to run
+		log.Println(err)
+		return
 	}
 
 	if *jsonOut {
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
-		enc.Encode(user)
+		if err := enc.Encode(user); err != nil {
+			log.Printf("Failed to encode JSON output: %v", err)
+			return
+		}
 	} else {
 		fmt.Println("✅ User found")
 		fmt.Printf("DN: %s\n", user.DN)

@@ -2,7 +2,6 @@ version: "2"
 
 run:
   timeout: 5m
-  tests: true
 
 linters:
   default: standard
@@ -14,12 +13,12 @@ linters:
     - misspell
     - gocritic
 
-linters-settings:
-  gocritic:
-    enabled-tags:
-      - diagnostic
-      - style
-      - performance
+  settings:
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
 
 issues:
   max-issues-per-linter: 0

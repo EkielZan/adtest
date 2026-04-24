@@ -138,7 +138,7 @@ func TestNewFeature(t *testing.T) {
 
 ## Linting Configuration
 
-The project uses **golangci-lint** for static analysis. Configuration is in `.golangci.yml`:
+The project uses **golangci-lint v2** for static analysis. Configuration is in `.golangci.yml`:
 
 ```yaml
 version: "2"  # Required for golangci-lint v2.x
@@ -152,6 +152,13 @@ linters:
     - unused        # Find unused code
     - misspell      # Spelling mistakes
     - gocritic      # Code quality hints
+
+  settings:        # Note: in v2, settings are nested under linters
+    gocritic:
+      enabled-tags:
+        - diagnostic
+        - style
+        - performance
 ```
 
 ### Installing golangci-lint
@@ -167,6 +174,7 @@ curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/insta
 | `errcheck: Error return value not checked` | Use `_ = f.Close()` for intentional ignores |
 | `exitAfterDefer: log.Fatal will exit, defer won't run` | Use `log.Println()` + `return` instead |
 | `staticcheck: deprecated API` | Use recommended replacement (e.g., `ldap.DialURL`) |
+| `gocritic: paramTypeCombine` | Use `func(a, b string)` instead of `func(a string, b string)` |
 
 ---
 

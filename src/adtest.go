@@ -31,9 +31,13 @@ func loadConfig(path string) (*Config, error) {
 func connectToAD(hostname string, port int, username string, password string) (*ldap.Conn, error) {
 	addr := fmt.Sprintf("%s:%d", hostname, port)
 
-	conn, err := ldap.DialTLS("tcp", addr, &tls.Config{
-		InsecureSkipVerify: true,
-	})
+	// Secure TLS configuration with proper certificate validation
+	tlsConfig := &tls.Config{
+		ServerName: hostname,
+		MinVersion: tls.VersionTLS12,
+	}
+
+	conn, err := ldap.DialTLS("tcp", addr, tlsConfig)
 	if err != nil {
 		return nil, fmt.Errorf("failed to dial AD server: %w", err)
 	}
@@ -57,6 +61,9 @@ func readPassword(bindUser string) (string, error) {
 }
 
 func searchUserBySAMAccountName(conn *ldap.Conn, baseDN string, samAccountName string) (*UserResult, error) {
+	// Escape user input to prevent LDAP injection
+	escapedSAM := ldap.EscapeFilter(samAccountName)
+	
 	req := ldap.NewSearchRequest(
 		baseDN,
 		ldap.ScopeWholeSubtree,
@@ -64,7 +71,7 @@ func searchUserBySAMAccountName(conn *ldap.Conn, baseDN string, samAccountName s
 		0,
 		0,
 		false,
-		fmt.Sprintf("(sAMAccountName=%s)", samAccountName),
+		fmt.Sprintf("(sAMAccountName=%s)", escapedSAM),
 		[]string{
 			"dn",
 			"cn",

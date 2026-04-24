@@ -101,9 +101,11 @@ You are an experienced Go developer with deep expertise in compilation, build pi
 - **Use validation methods** — add `Validate()` methods to config structs for encapsulation
 - **Validate input ranges** — e.g., port numbers must be 1-65535
 - **Use golangci-lint v2** — requires `version: "2"` in `.golangci.yml` config
+- **golangci-lint v2 config changes** — `linters-settings` is now `linters.settings` (nested), `run.tests` removed
 - **Handle encoding errors** — check errors from JSON, XML, and other encoders
 - **Avoid exitAfterDefer** — use `return` instead of `log.Fatal`/`os.Exit` when defer cleanup is needed
 - **Use non-deprecated APIs** — e.g., `ldap.DialURL` instead of `ldap.DialTLS`
+- **Combine consecutive typed parameters** — use `func(a, b string)` not `func(a string, b string)`
 
 ### Security Standards
 

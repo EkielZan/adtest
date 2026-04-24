@@ -28,7 +28,7 @@ func loadConfig(path string) (*Config, error) {
 	return &cfg, nil
 }
 
-func connectToAD(hostname string, port int, username string, password string, skipVerify bool) (*ldap.Conn, error) {
+func connectToAD(hostname string, port int, username, password string, skipVerify bool) (*ldap.Conn, error) {
 	// TLS configuration
 	tlsConfig := &tls.Config{
 		ServerName:         hostname,
@@ -62,7 +62,7 @@ func readPassword(bindUser string) (string, error) {
 	return string(bytes), nil
 }
 
-func searchUserBySAMAccountName(conn *ldap.Conn, baseDN string, samAccountName string) (*UserResult, error) {
+func searchUserBySAMAccountName(conn *ldap.Conn, baseDN, samAccountName string) (*UserResult, error) {
 	// Escape user input to prevent LDAP injection
 	escapedSAM := ldap.EscapeFilter(samAccountName)
 

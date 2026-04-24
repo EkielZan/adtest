@@ -12,7 +12,7 @@ func TestLoadConfig(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile.Name())
+	defer func() { _ = os.Remove(tmpfile.Name()) }()
 
 	cfg := Config{
 		Hostname: "test.example.com",
@@ -26,7 +26,7 @@ func TestLoadConfig(t *testing.T) {
 	if err := encoder.Encode(cfg); err != nil {
 		t.Fatal(err)
 	}
-	tmpfile.Close()
+	_ = tmpfile.Close()
 
 	// Test loading the config
 	loaded, err := loadConfig(tmpfile.Name())
@@ -60,10 +60,10 @@ func TestLoadConfigInvalidJSON(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer os.Remove(tmpfile.Name())
+	defer func() { _ = os.Remove(tmpfile.Name()) }()
 
-	tmpfile.WriteString("{invalid json}")
-	tmpfile.Close()
+	_, _ = tmpfile.WriteString("{invalid json}")
+	_ = tmpfile.Close()
 
 	_, err = loadConfig(tmpfile.Name())
 	if err == nil {
@@ -77,9 +77,9 @@ func TestGenerateConfigFile(t *testing.T) {
 		t.Fatal(err)
 	}
 	tmpPath := tmpfile.Name()
-	tmpfile.Close()
-	os.Remove(tmpPath) // Remove so we can test creation
-	defer os.Remove(tmpPath)
+	_ = tmpfile.Close()
+	_ = os.Remove(tmpPath) // Remove so we can test creation
+	defer func() { _ = os.Remove(tmpPath) }()
 
 	cfg := Config{
 		Hostname: "ad.example.com",
@@ -235,7 +235,7 @@ func TestConnectToAD_InsecureFlag(t *testing.T) {
 			if err == nil {
 				t.Error("Expected error for non-existent server, got nil")
 				if conn != nil {
-					conn.Close()
+					_ = conn.Close()
 				}
 				return
 			}
@@ -243,7 +243,7 @@ func TestConnectToAD_InsecureFlag(t *testing.T) {
 			// Verify error message indicates connection failure
 			if conn != nil {
 				t.Error("Expected nil connection on error")
-				conn.Close()
+				_ = conn.Close()
 			}
 		})
 	}
@@ -255,7 +255,7 @@ func TestConnectToAD_InvalidPort(t *testing.T) {
 	if err == nil {
 		t.Error("Expected error for invalid port, got nil")
 		if conn != nil {
-			conn.Close()
+			_ = conn.Close()
 		}
 	}
 }

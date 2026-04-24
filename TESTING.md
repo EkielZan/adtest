@@ -18,9 +18,9 @@ Or use the build script which runs linting and tests before building:
 ```
 
 The build script performs:
-1. **Linting** with golangci-lint (if installed)
-2. **Testing** with race detection enabled
-3. **Building** with optimization flags
+1. **Linting** with golangci-lint (requires v2 config format)
+2. **Testing** with race detection enabled (`CGO_ENABLED=1`)
+3. **Building** static binary with optimization flags (`CGO_ENABLED=0`)
 
 ### Running Specific Tests
 
@@ -136,6 +136,40 @@ func TestNewFeature(t *testing.T) {
 
 ---
 
+## Linting Configuration
+
+The project uses **golangci-lint** for static analysis. Configuration is in `.golangci.yml`:
+
+```yaml
+version: "2"  # Required for golangci-lint v2.x
+
+linters:
+  default: standard
+  enable:
+    - errcheck      # Check for unchecked errors
+    - govet         # Go vet checks
+    - staticcheck   # Static analysis
+    - unused        # Find unused code
+    - misspell      # Spelling mistakes
+    - gocritic      # Code quality hints
+```
+
+### Installing golangci-lint
+
+```bash
+curl -sSfL https://raw.githubusercontent.com/golangci/golangci-lint/master/install.sh | sh -s -- -b $(go env GOPATH)/bin
+```
+
+### Common Linting Issues
+
+| Issue | Fix |
+|-------|-----|
+| `errcheck: Error return value not checked` | Use `_ = f.Close()` for intentional ignores |
+| `exitAfterDefer: log.Fatal will exit, defer won't run` | Use `log.Println()` + `return` instead |
+| `staticcheck: deprecated API` | Use recommended replacement (e.g., `ldap.DialURL`) |
+
+---
+
 ## Continuous Integration
 
 The `build.sh` script integrates tests into the build pipeline:
@@ -150,7 +184,10 @@ The `build.sh` script integrates tests into the build pipeline:
 
 Output:
 ```
-Running tests...
+Running linter...
+0 issues.
+✅ Linting passed
+Running tests with race detection...
 === RUN   TestLoadConfig
 --- PASS: TestLoadConfig (0.00s)
 ...

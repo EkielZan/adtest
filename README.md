@@ -27,9 +27,18 @@ The tool is designed to be:
 
 ## 📦 Build
 
-```bash
-go build -o adtest
+Using the build script (recommended):
 
+```bash
+./build.sh
+```
+
+The build script runs linting, tests with race detection, and produces a static binary.
+
+Or build manually:
+
+```bash
+cd src && go build -trimpath -ldflags="-s -w" -o ../bin/adtest .
 ```
 
 ---
@@ -216,7 +225,7 @@ Or use the build script:
 ./build.sh
 ```
 
-📖 **For detailed testing documentation**, including test coverage, design principles,
+📖 **For detailed testing and linting documentation**, including test coverage, linting configuration,
 and guidelines for adding new tests, see **[TESTING.md](TESTING.md)**.
 
 ***
@@ -234,9 +243,10 @@ responsibility of the project author.
 
 The following components were generated or enhanced with AI assistance:
 
-- **Documentation**: This README and inline code comments
-- **Test cases**: Unit tests in `adtest_test.go`
-- **Build pipeline**: `build.sh` with test integration and workflow improvements
+- **Documentation**: This README, TESTING.md, and inline code comments
+- **Test cases**: Unit tests in `adtest_test.go` with validation and connection tests
+- **Build pipeline**: `build.sh` with linting, race detection, and static binary compilation
+- **Linting configuration**: `.golangci.yml` with v2 format and recommended linters
 - **Agent configuration**: `.github/agents/go-build-reviewer.agent.md`
 
 **AI Version**: Claude Opus 4.5 (GitHub Copilot)

@@ -1,16 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Ensure Go bin directory is in PATH
+export PATH="$PATH:$(go env GOPATH)/bin"
+
 # Force rebuild flag
 FORCE=""
 if [[ "${1:-}" == "1" ]]; then
     FORCE="-a"
 fi
-
-# Build configuration
-export CGO_ENABLED=0
-export GOOS=linux
-export GOARCH=amd64
 
 # Run linting (if available)
 cd src
@@ -25,8 +23,9 @@ else
     echo "⚠️  golangci-lint not installed, skipping linting"
 fi
 
-# Run tests with race detection
+# Run tests with race detection (requires CGO)
 echo "Running tests with race detection..."
+export CGO_ENABLED=1
 
 if ! go test -v -race ./...; then
     echo "❌ Tests failed"
@@ -34,6 +33,11 @@ if ! go test -v -race ./...; then
 fi
 
 echo "✅ Tests passed"
+
+# Build configuration (static binary, no CGO)
+export CGO_ENABLED=0
+export GOOS=linux
+export GOARCH=amd64
 
 # Build with optimization flags
 echo "Building adtest binary..."
